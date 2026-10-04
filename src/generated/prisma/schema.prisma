@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  //url = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  role      Role      @default(CUSTOMER)
+  orders    Order[]
+  addresses Address[]
+  createdAt DateTime  @default(now())
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  nameEn   String
+  nameAr   String?
+  slug     String    @unique
+  products Product[]
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  nameEn      String
+  nameAr      String?
+  slug        String      @unique
+  description String?
+  price       Decimal     @db.Decimal(10, 3)
+  vatRate     Decimal     @default(5) @db.Decimal(5, 2)
+  stock       Int         @default(0)
+  images      String[]
+  categoryId  String?
+  category    Category?   @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([categoryId])
+  @@index([isActive])
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  orderNo   String      @unique
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id])
+  status    OrderStatus @default(PENDING)
+  subtotal  Decimal     @db.Decimal(10, 3)
+  vat       Decimal     @db.Decimal(10, 3)
+  total     Decimal     @db.Decimal(10, 3)
+  currency  String      @default("OMR")
+  items     OrderItem[]
+  payment   Payment?
+  addressId String?
+  address   Address?    @relation(fields: [addressId], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  productName String
+  quantity    Int
+  unitPrice   Decimal @db.Decimal(10, 3)
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  fullName  String
+  phone     String
+  city      String
+  details   String
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  orderId   String   @unique
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider  String   @default("thawani")
+  sessionId String?
+  status    String   @default("PENDING")
+  amount    Decimal  @db.Decimal(10, 3)
+  raw       Json?
+  createdAt DateTime @default(now())
+}
