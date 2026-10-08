@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "host": "akheir.com",
+  "user": "akhebgsa",
+  "domain": "akheir.com",
+  "appName": "oman-shop",
+  "appRoot": "oman-shop",
+  "startupFile": "server.js",
+  "preserve": [
+    ".env.local",
+    ".env.production.local"
+  ]
+}
